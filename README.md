@@ -27,7 +27,7 @@ Añadidos de Rafael Gallego: script avanzado para enviar correos con o sin adjun
 Ver ayuda con:
    EnvioMSG.py -h
 
-   usage: EnvioMSG.py [-h] [-v] [-d [DIRPDF]] [-p PATRON] [-a ASUNTO] [-e EXAMEN]
+    usage: EnvioMSG.py [-h] [-v] [-d [DIRPDF]] [-p PATRON] [-a ASUNTO] [-e EXAMEN]
                    [--asignatura ASIGNATURA] [--acuse] [--emailrte EMAILRTE]
                    [--remitente REMITENTE] [--servidor SERVIDOR]
                    [--password PASSWORD]
