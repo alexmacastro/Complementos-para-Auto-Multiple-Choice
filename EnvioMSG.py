@@ -5,7 +5,8 @@
 # Para ello también hay que hacer chmod +x EnvioMSG.py, para hacer el fichero ejecutable
 
 # Enviar mensaje con adjunto personalizado (examen, ejercicio, etc) a lista de alumnos contenida en fichero CSV
-# Los ficheros adjuntos a enviar a cada alumno deben contener en su nombre el CID del alumno.
+# Los ficheros adjuntos a enviar a cada alumno deben contener en su nombre algún dato del alumno 
+# (ver argumento --patron más abajo)
 
 # Autor: Rafael Gallego Sevilla
 #   Departamento de Mecánica de Estructuras e Ingeniería Hidráulica. 
@@ -62,6 +63,8 @@
 #     --remitente REMITENTE
 #                           Nombre del remitente (por omisión: 'Rafael Gallego')
 #     --servidor SERVIDOR   Servidor para envío correos (por omisión: 'smtp.ugr.es:587')
+#     --password PASSWORD   Password de la cuenta. Si no se da con esta opción, lo pedirá.
+
 
 # El script necesita dos ficheros obligatoriamente, fichCSV y fichMSG,
 #
@@ -88,6 +91,17 @@
 import sys
 import argparse
 import os
+
+# Función auxiliar para enviar mensaje en HTML eliminando codificación UTF8 (y entidades HTML)
+# Codificación (debe ser 'utlf-8' para Linux. Voy a ver si leyendo esto soy capaz de hacer que 
+# funcione también en windows, etc.
+charcod = sys.getfilesystemencoding()
+
+import cgi
+def ToHTML(text):
+    # Primero paso ", ', &, <, > a entidades HTML, luego paso a string UNICODE los caracteres acentuados etc, 
+    # y luego codifico estos caracteres especiales como entidades HTML
+    return cgi.escape(text).decode(charcod).encode('ascii', 'xmlcharrefreplace')
 
 # Valores por omisión: aquí se DEBEN cambiar para personalizar cada profesor
 # 
@@ -127,6 +141,8 @@ parser.add_argument("--remitente", default=remitente,
     help="Nombre del remitente (por omisión: '%(default)s').")
 parser.add_argument("--servidor", default=servidor,
     help="Servidor para envío correos (por omisión: '%(default)s').")
+parser.add_argument("--password", # Lo he puesto para hacer pruebas más rápido
+    help="Password de la cuenta. Si no se da con esta opción, lo pedirá.")
 
 args = parser.parse_args()
 
@@ -162,7 +178,7 @@ if ('%(asignatura)' in msg or '%(ASIGNATURA)' in msg) and args.asignatura==None:
 #==============================================================================
 
 ficheros = []
-if args.dirpdf!=None:
+if args.dirpdf != None:
     # Los ficheros a enviar están en el directorio args.dirpdf
     # Lista con nombre de todos los pdf, indexados. 
     # Pongo / al final del directorio, por si se ha olvidado
@@ -179,14 +195,16 @@ from ModuloEmail import *
 
 pm_login_usuario = args.emailrte.split('@')[0]
 
-# Entrada de contraseña oculta
-import getpass
+# Entrada de contraseña oculta: puedo ponerlo en la línea de entrada para las pruebas
+if args.password is None:
+    import getpass
+    print "Introduzca contraseña de email para usuario UGR: " + args.emailrte
+    print "Por seguridad, al teclear permanecerá oculta sin dar pistas" 
+    pm_login_password = getpass.getpass()
+else:
+    pm_login_password = args.password
 
-print "Introduzca contraseña de email para usuario UGR: " + args.emailrte
-print "Por seguridad, al teclear permanecerá oculta sin dar pistas" 
-pm_login_password = getpass.getpass()
-
-# Acuse de recibo e imágnes embebias (que no habrá)
+# Acuse de recibo e imágenes embebidas (que no habrá)
 pm_acuse_recibo  = args.acuse
 pm_imagenes_embebidas = []
 
@@ -230,7 +248,8 @@ for index,row in enumerate(fCSV):
     pm_archivo_texto   = mensaje
     pm_receptor_nombre = row[2].strip() + " " +  row[1].strip()
     pm_receptor_correo = row[3].strip()
-    pm_archivo_html    = '<pre>'+mensaje+'</pre>'
+    pm_archivo_html    = '<pre style="color:#80461b;font-family:arial,sans-serif;font-size:15px">'+\
+        ToHTML(mensaje)+'</pre>'
     pm_adjuntos        = []
     # Busco fichero para adjuntar, si me han dicho que lo haga
     envia = True
